@@ -1,0 +1,189 @@
+---
+title: "psichiOctoberComp"
+author: "Brady M. Chisholm"
+date: "2024-10-26"
+output: html_document
+---
+Load Data & packages 
+```{r}
+# Load local data. 
+#FIXME load data non-locally 
+HorrorIMDB <- read.csv("~/Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
+
+
+# Check for required packages and install if needed 
+#FIXME update packages before completing code 
+required_packages <- c("ggplot2", "dplyr","tidyr") 
+
+for (pkg in required_packages) {
+  if (!require(pkg, character.only = TRUE)) { 
+    install.packages(pkg)               
+    library(pkg, character.only = TRUE)} else {
+    library(pkg, character.only = TRUE)}}
+```
+
+### Data Processing Level 1 
+```{r}
+library(ggplot2)
+library(tidyr)
+# Filter out movies that are missing a value in budget, runtime, parentalrating, and rating column 
+cleanedMovies <- HorrorIMDB %>%
+  filter(!is.na(Budget), !is.na(RunTime), !is.na(ParentalRating), !is.na(Rating))
+
+# Separate the 'Genre' column into multiple genre categories
+# Assuming 'Genre' column contains strings like "Action| Fantasy| Horror| Mystery| Romance"
+# This separates each genre into its own column
+
+
+# Separate genre column into multiple categories 
+genreSorted <- cleanedMovies %>%
+  separate_rows(Genres, sep = "\\|") %>%
+  mutate(Genre = trimws(Genres)) # trim any white space  we created 
+```
+
+### Descriptive Statistics Level 2
+```{r}
+# Avg, std, median, range of rating variable 
+summaryStat <- function(myDat){
+  
+  avg <- mean(myDat, na.rm = TRUE)
+  std <- sd(myDat, na.rm = TRUE)
+  med <- median(myDat, na.rm = TRUE)
+  rg <- range(myDat, na.rm = TRUE)
+  # organize results and make them print in a pretty way. Alt data frame? 
+  stats_df <- data.frame(
+    Descriptive_Stat = c("Average", "Standard Deviation", "Median", "Range"),
+    Value = c(round(avg, 2), round(std, 2), round(med, 2), paste("(", rg[1], " to ", rg[2], ")", sep = ""))) # clean up values for printing 
+  
+  print(stats_df, row.names = FALSE)
+  
+  # suppress output, just print cleaned df 
+  invisible(list(avg = avg, std = std, med = med, range = rg))} # function end 
+
+summaryStat(HorrorIMDB$Rating)
+```
+
+Descriptive stats pt 2, average rating by a movies main genre. Handle NaN's?  
+```{r}
+# Define the function to calculate the average rating by main genre
+genreAvg <- function(data) {
+  # uses dyplr, ensure install earlier in script 
+  
+  # Check for required columns in data
+  if (!all(c("Genre","Genre", "Rating") %in% colnames(data))) { #FIXME %in% ?? 
+    # throw error if we don't have enough info 
+    stop("Data must contain genre and rating data")}
+  
+  # Calculate rating for each genre 
+  genre_avg_df <- data %>% # FIXME double pipe? 
+    group_by(Genre) %>% # use genre as grouper 
+    summarise(Average_Rating = mean(Rating, na.rm = TRUE)) %>%
+    arrange(desc(Average_Rating)) # Sort by average rating, highest first 
+  
+  # Print pretty results
+  print(genre_avg_df, row.names = FALSE)
+  
+  # return table but suppress 
+  invisible(genre_avg_df)} # function end 
+
+# test function 
+genreAvg(genreSorted)
+genreAvg(HorrorIMDB) #FIXME doesn't handle unsorted data. Or is it NaN? 
+genreAvg(cleanedMovies)
+```
+
+### Data Visualization Level 3 
+
+```{r mine}
+#FIXME ADD HALLOWEEN COLORS 
+# Graph budget of movies  over time 
+
+# clean up data first. Need to extract year for plotting
+HorrorIMDB <- HorrorIMDB %>%
+  mutate(Release_Date = mdy(Release_Date),          # Convert to date format
+         Year = year(Release_Date),                 # Extract year from the date
+         Budget_Million = Budget / 1e6) %>%         # Convert Budget to millions
+  filter(!is.na(Year) & !is.na(Budget) & Year >= 1925)  # setting year to 1925 ommits 
+
+# was Year >= 1970. I do NOT want to cut data. Figure out solution
+# Filter for valid years and post-1970
+
+# after cleaning we can create our plot 
+ggplot(HorrorIMDB, aes(Year,Budget)) +
+  geom_line(color = "#F98128", linewidth = 0.7) +     # Line plot in Halloween orange with linewidth
+  geom_point(color = "#5D2586", alpha = 0.6)
+  
+```
+
+```{r sketchy plot}
+# Load  packages
+if (!require(ggplot2)) install.packages("ggplot2"); library(ggplot2)
+if (!require(dplyr)) install.packages("dplyr"); library(dplyr)
+if (!require(lubridate)) install.packages("lubridate"); library(lubridate)
+if (!require(scales)) install.packages("scales"); library(scales)
+if (!require(patchwork)) install.packages("patchwork"); library(patchwork)
+
+# Convert 'Release_Date' to date format and extract year
+HorrorIMDB <- HorrorIMDB %>%
+  mutate(Release_Date = mdy(Release_Date),          # Convert to date 
+         Year = year(Release_Date),                 # Extract year
+         Budget_Million = Budget / 1e6) %>%         #  Budget to mill
+  filter(!is.na(Year) & !is.na(Budget))             # Filter valid years and budgets
+
+# Check range of years
+print(range(HorrorIMDB$Year, na.rm = TRUE))
+
+# Split data into early and late 
+early_data <- HorrorIMDB %>% filter(Year <= 1950)
+recent_data <- HorrorIMDB %>% filter(Year >= 1970)
+
+# Check subsets, sanity check 
+print("Early Data Subset (Year <= 1950):")
+print(head(early_data))
+print("Recent Data Subset (Year >= 1970):")
+print(head(recent_data))
+
+# Plot early years
+early_plot <- ggplot(early_data, aes(Year, Budget_Million)) +
+  geom_point(color = "#5D2586", alpha = 0.6) +       # Points with Halloween purple
+  scale_x_continuous(breaks = seq(1905, 1950, by = 10)) +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
+  labs(x = "Year (1905-1950)", y = "Budget (in millions)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.background = element_rect(fill = "grey95", color = NA))
+
+# Plot for recent. Narrow definition 
+
+#FIXME xlabs do not exist 
+recent_plot <- ggplot(recent_data, aes(Year, Budget_Million)) +
+  geom_point(color = "#5D2586", alpha = 0.6) +       # Points with Halloween purple
+  scale_x_continuous(breaks = seq(1970, 2012, by = 10)) +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
+  labs(x = "Year (1970-2012)", y = NULL) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.background = element_rect(fill = "grey95", color = NA))
+
+# splice 
+combined_plot <- early_plot + recent_plot + plot_layout(ncol = 2, widths = c(1, 1))
+
+# print final 
+combined_plot + # create overall plot objects here 
+  plot_annotation(title = "Movie Budgets Over Time",
+                  subtitle = "X-Break",
+                  theme = theme(plot.title = element_text(face = "bold")))
+
+```
+
+
+### Inferential Statistics 
+```{r}
+# Do movies with bigger budgets get better ratings?? 
+
+
+# Do movies in the Horror genre get better ratings than mystery movies? 
+
+
+```
+
