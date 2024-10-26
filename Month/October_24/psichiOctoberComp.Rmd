@@ -7,9 +7,10 @@ output: html_document
 Load Data & packages 
 ```{r}
 # Load local data. 
-#FIXME load data non-locally 
-HorrorIMDB <- read.csv("~/Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
+#FIXME load data non-locally. Reference HTML?
+#HorrorIMDB <- read.csv("~/Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
 
+HorrorIMDB <- read.csv("C:/Academics/OSF_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
 
 # Check for required packages and install if needed 
 #FIXME update packages before completing code 
@@ -87,97 +88,106 @@ genreAvg <- function(data) {
   invisible(genre_avg_df)} # function end 
 
 # test function 
-genreAvg(genreSorted)
-genreAvg(HorrorIMDB) #FIXME doesn't handle unsorted data. Or is it NaN? 
-genreAvg(cleanedMovies)
+genreAvg(genreSorted) # only working function call with cleaned data 
+#   genreAvg(HorrorIMDB) #FIXME doesn't handle unsorted data. Or is it NaN? 
+#   genreAvg(cleanedMovies)
 ```
 
 ### Data Visualization Level 3 
 
-```{r mine}
+```{r data wrangle first}
 #FIXME ADD HALLOWEEN COLORS 
 # Graph budget of movies  over time 
-
-# clean up data first. Need to extract year for plotting
-HorrorIMDB <- HorrorIMDB %>%
-  mutate(Release_Date = mdy(Release_Date),          # Convert to date format
-         Year = year(Release_Date),                 # Extract year from the date
-         Budget_Million = Budget / 1e6) %>%         # Convert Budget to millions
-  filter(!is.na(Year) & !is.na(Budget) & Year >= 1925)  # setting year to 1925 ommits 
-
-# was Year >= 1970. I do NOT want to cut data. Figure out solution
-# Filter for valid years and post-1970
-
-# after cleaning we can create our plot 
-ggplot(HorrorIMDB, aes(Year,Budget)) +
-  geom_line(color = "#F98128", linewidth = 0.7) +     # Line plot in Halloween orange with linewidth
-  geom_point(color = "#5D2586", alpha = 0.6)
-  
-```
-
-```{r sketchy plot}
-# Load  packages
+# req packages 
 if (!require(ggplot2)) install.packages("ggplot2"); library(ggplot2)
 if (!require(dplyr)) install.packages("dplyr"); library(dplyr)
 if (!require(lubridate)) install.packages("lubridate"); library(lubridate)
 if (!require(scales)) install.packages("scales"); library(scales)
 if (!require(patchwork)) install.packages("patchwork"); library(patchwork)
-
-# Convert 'Release_Date' to date format and extract year
+# clean up data first. Need to extract year for plotting
 HorrorIMDB <- HorrorIMDB %>%
-  mutate(Release_Date = mdy(Release_Date),          # Convert to date 
-         Year = year(Release_Date),                 # Extract year
-         Budget_Million = Budget / 1e6) %>%         #  Budget to mill
-  filter(!is.na(Year) & !is.na(Budget))             # Filter valid years and budgets
+  mutate(Release_Date = mdy(Release_Date),  # Convert to date
+         Year = year(Release_Date),         # Extract year 
+         Budget_Million = Budget / 1e6) #%>%  # Convert Budget to millions
 
-# Check range of years
-print(range(HorrorIMDB$Year, na.rm = TRUE))
+# bad code. Filter was removing all low values 
+  #filter(!is.na(Year) & !is.na(Budget) & Year >= 1925)  # setting year to 1925 omits n ..? 
+HorrorIMDB <- HorrorIMDB %>%
+  filter(!is.na(Year))
 
-# Split data into early and late 
-early_data <- HorrorIMDB %>% filter(Year <= 1950)
-recent_data <- HorrorIMDB %>% filter(Year >= 1970)
-
-# Check subsets, sanity check 
-print("Early Data Subset (Year <= 1950):")
-print(head(early_data))
-print("Recent Data Subset (Year >= 1970):")
-print(head(recent_data))
-
-# Plot early years
-early_plot <- ggplot(early_data, aes(Year, Budget_Million)) +
-  geom_point(color = "#5D2586", alpha = 0.6) +       # Points with Halloween purple
-  scale_x_continuous(breaks = seq(1905, 1950, by = 10)) +
-  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
-  labs(x = "Year (1905-1950)", y = "Budget (in millions)") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.background = element_rect(fill = "grey95", color = NA))
-
-# Plot for recent. Narrow definition 
-
-#FIXME xlabs do not exist 
-recent_plot <- ggplot(recent_data, aes(Year, Budget_Million)) +
-  geom_point(color = "#5D2586", alpha = 0.6) +       # Points with Halloween purple
-  scale_x_continuous(breaks = seq(1970, 2012, by = 10)) +
-  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
-  labs(x = "Year (1970-2012)", y = NULL) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        plot.background = element_rect(fill = "grey95", color = NA))
-
-# splice 
-combined_plot <- early_plot + recent_plot + plot_layout(ncol = 2, widths = c(1, 1))
-
-# print final 
-combined_plot + # create overall plot objects here 
-  plot_annotation(title = "Movie Budgets Over Time",
-                  subtitle = "X-Break",
-                  theme = theme(plot.title = element_text(face = "bold")))
-
+# divide data into early and late 
+early_data <- HorrorIMDB %>% filter(Year <= 1905)
+later_data <- HorrorIMDB %>% filter(Year >= 1910)
 ```
 
+```{r} 
+# misc color junk. cool plot though 
+jet.colors <-
+  colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan",
+                     "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+filled.contour(volcano, color.palette = jet.colors, asp = 1)
+```
 
-### Inferential Statistics 
+after cleaning we can finally plot
+```{r}
+# first plot early data 
+early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
+  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 3.5) + # only one year, distribute points
+  geom_smooth(method = "lm", linewidth = 4, color = "#00CED1", fill = "#A2D2DF", na.rm = TRUE) +
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
+  labs(
+      title = "Movie Budgets in 1905",
+       x = "1905", 
+       y = "Budget in Millions $") +
+  theme_minimal() + 
+    theme(
+      panel.grid = element_line(color = "orange"),
+      panel.grid.major.x = element_line(color = "orange"),
+      panel.grid.major.y = element_line(color = "black"),
+      axis.ticks.y = element_line(color = "black"),
+      axis.ticks.x = element_line(color = "black"),
+      plot.title = element_text(face = "bold", size = 15, hjust = 1.2, color = "black"),
+      plot.background = element_rect(fill = "orange"),
+      axis.text.y = element_text(family = "serif",color = "black",face = "bold"),
+      axis.text.x = element_text(color = "orange"),
+      axis.line.x = element_line(color = "black"),
+      axis.line.y = element_line(color = "black"),
+      text = element_text(family = "serif", color = "black",size = 16, face = "bold")
+      ) # close theme 
+
+later_plot <-ggplot(later_data, aes(x = Year, y = Budget_Million)) +
+  geom_smooth(method = "glm", linewidth = 1.5, color = "#00CED1", fill = "orange", na.rm = TRUE, se = TRUE,span = 1, level = .98) +
+  geom_jitter(color = "white", alpha = 0.55, width = 0.47, size = 4) + 
+  scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
+  labs(
+    title = "Movie Budgets from 2012 to 2017",
+    x = "Year (2012-2017)",
+    y = NULL) +
+  theme_minimal() +
+  theme(
+   # text = element_text(family = "serif", color = "ghostwhite"),
+     axis.text = element_text(color = "white"),
+    text = element_text(family = "serif", color = "black",size = 16, face = "bold"),
+    plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = "white"),
+    axis.text.x = element_text(angle = 45, hjust = 0.5, color = "white"),
+    axis.title.x = element_text(face = "bold", hjust = 0.5, color = "white"),
+    panel.grid = element_line(color = "#8B0000", size = 0.1),
+    plot.background = element_rect(fill = "black")
+) 
+
+# splice together, add final aesthetics 
+comboPlot <- early_plot + later_plot + plot_layout(ncol = 2, widths = c(0.3, 2.5))
+comboPlot + 
+  plot_annotation(
+    title = "Halloween Movie Budgets Over Time",
+    subtitle = "Comparing Budgets from 1905 to Modern Day; 2012-2017",
+    theme = theme(
+      text = element_text(family = "serif", color = "ghostwhite"),
+      plot.title = element_text(face = "bold", size = 23, color = 'maroon', hjust = 0.5),
+      plot.subtitle = element_text(face = 'italic', size = 14, color = 'red', hjust = 0.5)))
+```
+
+### Inferential Statistics Level 4 
 ```{r}
 # Do movies with bigger budgets get better ratings?? 
 
