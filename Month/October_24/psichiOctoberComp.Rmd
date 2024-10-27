@@ -30,7 +30,9 @@ horrorDataSrc <- "https://osf.io/download/mxs49/?direct&mode=render"
 ```
 
 ## Data Processing -- Level 1 
+
 ### Filter movies with missing values 
+
 ```{r level 1 pt 1}
 # read in data from src 
 HorrorIMDB <- read.csv(horrorDataSrc)
@@ -46,7 +48,9 @@ genreSorted <- cleanedMovies %>%
 ```
 
 ## Descriptive Statistics -- Level 2
+
 ### Create summary statistic script 
+
 ```{r descriptive stats pt 1}
 # Avg, std, median, range of rating variable 
 summaryStat <- function(myDat){
@@ -67,7 +71,9 @@ summaryStat <- function(myDat){
 
 summaryStat(HorrorIMDB$Rating)
 ```
+
 ### Show average by genre
+
 ```{r descriptive stats pt 2}
 # Define the function to calculate the average rating by main genre
 genreAvg <- function(data) {
@@ -90,14 +96,18 @@ genreAvg <- function(data) {
   # return table but suppress 
   invisible(genre_avg_df)} # function end 
 ```
+
 #### Test function 
+
 ```{r}
 # test function 
 genreAvg(genreSorted) # function only works when called on sorted data 
 ```
 
 ## Data Visualization -- Level 3 
-### Plot the budget for movies over time 
+
+### Plot the budget for movies over time
+
 ```{r data viz. data wrangle}
 # clean up data first. Need to extract year for plotting
 HorrorIMDB <- HorrorIMDB %>%
@@ -115,6 +125,7 @@ later_data <- HorrorIMDB %>% filter(Year >= 1910)
 ```
 
 ### After cleaning, finally can plot
+
 ```{r data visualization}
 # Graph budget of movies  over time 
 # first plot early data 
@@ -173,8 +184,10 @@ comboPlot +
       plot.subtitle = element_text(face = 'italic', size = 14, color = 'red', hjust = 0.5)))
 ```
 
-## Inferential Statistics -- Level 4 
+## Inferential Statistics -- Level 4
+
 ### Do horror movies get better ratings than mystery movies? 
+
 ```{r inferential pt 1}
 # Do movies with bigger budgets get better ratings?? 
 cleaned_data <- HorrorIMDB %>%
@@ -193,6 +206,8 @@ ggplot(cleaned_data, aes(x = Budget, y = Rating)) +
     plot.title = element_text(size = 16, face = "bold", color = "orange"),
     axis.title = element_text(size = 14, color = "white"),
     axis.text = element_text(size = 12, color = "orange"),
+    axis.line.x = element_line(color = "white"),
+    axis.line.y = element_line(color = "white"),
     panel.background = element_rect(fill = "#222222", color = NA),  # Dark panel background
     plot.background = element_rect(fill = "#222222", color = NA),   # Dark plot background
     plot.margin = margin(15, 15, 15, 15)  # Adds space around plot for readability
@@ -224,6 +239,7 @@ The regression equation used is:
 The p-value of 0.000217 tells us a statistically significant relationship between budget and ratings exists. However, the **R-squared value** is **0.016**. A low R-squared value such as this says budget explains only about 1.6% of the variance in movie ratings. This tells us that there are possibly many other factors influencing movie success as measured by ratings.
 
 ### Do horror movies get better ratings than mystery? 
+
 ```{r inferential pt 2}
 print("Genres in dataset:")
 print(unique(genreSorted$Genres))
@@ -252,12 +268,13 @@ ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
   scale_fill_manual(values = c(" Horror" = "#FF7518", " Mystery" = "#6A0DAD")) +  # Halloween colors
   labs(
     title = "Horror vs Mystery Movies",
-    subtitle = "Spooky Edition",
+    subtitle = "Spooky Themed",
     x = "Genre",
     y = "IMDB Rating"
   ) +
   theme_minimal() +
   theme(
+    #FIXME plot axis as white to match grid
     plot.title = element_text(size = 18, face = "bold", color = "orange",hjust = 0.5),
     axis.title = element_text(size = 14, color = "white"),
     axis.text = element_text(size = 12, color = "orange"),
