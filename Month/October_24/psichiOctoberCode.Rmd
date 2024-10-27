@@ -1,10 +1,9 @@
 ---
-title: "PsiChi R Coding Competition Submission--October"
+title: "PsiChi R Competition Submission October"
 author: "Brady M. Chisholm"
 date: "October, 2024"
 output: pdf_document
 ---
-
 ## Load Data & packages
 
 ### Assume user has nothing installed, support this in .rmd file
@@ -12,18 +11,16 @@ output: pdf_document
 ```{r}
 
 # List required packages, install if needed
-required_packages <- c("knitr","formatR","tidyverse", "ggplot2", "tidyr", "dplyr", 
-                       "lubridate", "scales", "patchwork")
+required_packages <- c("knitr","tidyverse", "lubridate", "scales", "patchwork")
 
 suppressMessages(suppressWarnings({
   for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) {
-    install.packages(pkg, repos = "https://cloud.r-project.org")
-  }
-  library(pkg, character.only = TRUE)}  # end for 
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg, repos = "https://cloud.r-project.org")
+    }
+    library(pkg, character.only = TRUE)}  # end for 
 })) # end suppress 
-knitr::opts_chunk$set(comment = '', fig.width = 8, fig.height = 6, warning = FALSE, 
-                  tidy.opts = list(width.cutoff = 60))
+knitr::opts_chunk$set(comment = '', fig.width = 8, fig.height = 6, warning = FALSE)
 
 # use osf url. Tried to source from my github but repo errors 
 horrorDataSrc <- "https://osf.io/download/mxs49/?direct&mode=render"
@@ -33,7 +30,7 @@ horrorDataSrc <- "https://osf.io/download/mxs49/?direct&mode=render"
 
 ### Filter movies with missing values 
 
-```{r level 1 pt 1}
+```{r, level 1 pt 1}
 # read in data from src 
 HorrorIMDB <- read.csv(horrorDataSrc)
 
@@ -58,6 +55,7 @@ summaryStat <- function(myDat){
   std <- sd(myDat, na.rm = TRUE)
   med <- median(myDat, na.rm = TRUE)
   rg <- range(myDat, na.rm = TRUE)
+  
   # organize results and make them print in a pretty way. Alt a data frame? 
   stats_df <- data.frame(
     Descriptive_Stat = c("Average", "Standard Deviation", "Median", "Range"),
@@ -124,13 +122,13 @@ early_data <- HorrorIMDB %>% filter(Year <= 1905)
 later_data <- HorrorIMDB %>% filter(Year >= 1910)
 ```
 
-### After cleaning, finally can plot
+### After cleaning, finally plot
 
 ```{r data visualization}
 # Graph budget of movies  over time 
 # first plot early data 
 early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
-  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 2) + # only one yr, distribute points
+  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 2) + # distribute points
   scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
     title = "Movie Budgets in 1905",
@@ -138,7 +136,8 @@ early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
     y = "Budget in Millions $") +
   theme_minimal() + 
   theme(
-    text = element_text(family = "serif", color = "black",size = 12, hjust = .5, face = "bold"),
+    text = element_text(family = "serif", color = "black",size = 12, 
+                        hjust = .5, face = "bold"),
     panel.grid = element_line(color = "orange"),
     panel.grid.major.x = element_line(color = "orange"),
     panel.grid.major.y = element_line(color = "black"),
@@ -194,25 +193,28 @@ cleaned_data <- HorrorIMDB %>%
   filter(!is.na(Budget), !is.na(Rating))
 
 ggplot(cleaned_data, aes(x = Budget, y = Rating)) +
-  geom_point(alpha = 0.7, color = "#32CD32", size = 2) +  # Neon green points
-  geom_smooth(method = "lm", color = "#FF7518", se = TRUE, size = 1.1) +  # Orange regression line
+  geom_point(alpha = 0.7, color = "#32CD32", size = 2) +  # viz points?
+  geom_smooth(method = "lm", color = "#FF7518", se = TRUE, size = 1.1) + 
   scale_x_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
     title = "Movie Budget and Rating: Halloween Edition",
+    subtitle = "Spooky spooky everywhere!",
     x = "Budget ($ Million)",
     y = "IMDB Rating") +
   theme_minimal() +
   theme(
-    plot.title = element_text(size = 16, face = "bold", color = "orange"),
+    plot.title = element_text(size = 16, face = "bold", color = "orange",hjust = 0.5),
+    plot.subtitle = element_text(size = 10, face = "italic", color = "white"),
     axis.title = element_text(size = 14, color = "white"),
     axis.text = element_text(size = 12, color = "orange"),
     axis.line.x = element_line(color = "white"),
     axis.line.y = element_line(color = "white"),
-    panel.background = element_rect(fill = "#222222", color = NA),  # Dark panel background
-    plot.background = element_rect(fill = "#222222", color = NA),   # Dark plot background
-    plot.margin = margin(15, 15, 15, 15)  # Adds space around plot for readability
+    panel.background = element_rect(fill = "#222222", color = NA),
+    plot.background = element_rect(fill = "#222222", color = NA),   
+    plot.margin = margin(15, 15, 15, 15),
+    text = element_text(family = "serif")
   )
-# find our correlation statistic  
+# find correlation statistic  
 correlation <- cor(cleaned_data$Budget, cleaned_data$Rating, use = "complete.obs")
 print(paste("Correlation between budget & rating is", round(correlation, 2)))
 
@@ -226,11 +228,11 @@ The correlation between budget and rating is **0.13**. This indicates a **weak p
 A linear regression model was fitted to explore the effect of budget on IMDB ratings. The model summary is:
 
 - **Intercept**: 4.97
-- **Budget Coefficient**: 2.13e-08
+- **Budget $\beta$**: 2.13e-08
 - **t-value**: 3.72
-- **p-value**: 0.000217 (**p < 0.001**)
+- **p-value**: 0.000217 (p < 0.001)
 
-The regression equation used is:
+The regression equation is:
 
 \[
 \text{Rating} = 4.97 + (2.13 \times 10^{-8}) \times \text{Budget}
@@ -244,18 +246,18 @@ The p-value of 0.000217 tells us a statistically significant relationship betwee
 print("Genres in dataset:")
 print(unique(genreSorted$Genres))
 
-# filter out genres in question 
+# filter out genres  
 cleanGenreDat <- genreSorted %>%
   filter(!is.na(Rating), Genres %in% c(" Horror", " Mystery")) # leading space?!?
 
-# assert data existence
+# assert existence
 unique_genres <- unique(cleanGenreDat$Genres)
 print("Genres present in the filtered dataset:")
 print(unique_genres)
 if (length(unique_genres) < 2) {
   stop("Error: Dataset must contain both 'Horror' and 'Mystery' genres for comparison.")}
 
-# plot the ratings 
+# plot ratings 
 ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
   geom_boxplot(
     alpha = 0.8, 
@@ -265,9 +267,9 @@ ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
     color = "orange",  
     size = 1.0
   ) +
-  scale_fill_manual(values = c(" Horror" = "#FF7518", " Mystery" = "#6A0DAD")) +  # Halloween colors
+  scale_fill_manual(values = c(" Horror" = "#FF7518", " Mystery" = "#6A0DAD")) +  
   labs(
-    title = "Horror vs Mystery Movies",
+    title = "Horror v.s. Mystery Movies",
     subtitle = "Spooky Themed",
     x = "Genre",
     y = "IMDB Rating"
@@ -280,7 +282,7 @@ ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
     axis.text = element_text(size = 12, color = "orange"),
     plot.subtitle = element_text(size = 13, face = "italic", color = "orange",hjust = 0.5),
     legend.position = "none",
-    plot.background = element_rect(fill = "#222222", color = NA),  # Dark background
+    plot.background = element_rect(fill = "#222222", color = NA),  
     panel.background = element_rect(fill = "#222222"),
     text = element_text(family = "serif"))  # end theme 
 
@@ -292,11 +294,13 @@ genre_means <- cleanGenreDat %>%
 print("Mean Ratings for Each Genre:")
 print(genre_means)
 ```
-The average rating for each genre is:
-- **Horror**: 6.3
-- **Mystery**: 7.1
+The average rating for each genre is: 
 
-Analysis suggests that **Mystery movies tend to receive higher ratings on average** than **horror** movies, and this difference is statistically significant.
+ **Horror**: 6.3
+ 
+ **Mystery**: 7.1 
+
+Analysis suggests that **mystery movies tend to receive higher ratings on average** than **horror** movies, and this difference is statistically significant.
 
 ```{r,include = FALSE,echo = TRUE}
 invisible(cat(" /\\_/\\\n( o.o )\n > ^ <\n"))
