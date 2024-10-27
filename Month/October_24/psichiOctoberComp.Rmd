@@ -4,29 +4,30 @@ author: "Brady M. Chisholm"
 date: "2024-10-26"
 output: html_document
 ---
-Load Data & packages 
-```{r}
-# Load local data. 
-#FIXME load data non-locally. Reference HTML?
-#HorrorIMDB <- read.csv("~/Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
 
-HorrorIMDB <- read.csv("C:/Academics/OSF_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
-
-# Check for required packages and install if needed 
-#FIXME update packages before completing code 
-required_packages <- c("ggplot2", "dplyr","tidyr") 
-
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) { 
-    install.packages(pkg)               
-    library(pkg, character.only = TRUE)} else {
-    library(pkg, character.only = TRUE)}}
+### Load Data & packages 
+```{r setup}
+# suppress from knitted output? 
+# List required packages
+required_packages <- c("rvest", "tidyverse", "ggplot2", "tidyr", "dplyr", "lubridate", "scales", "patchwork")
+# check, install if missing 
+suppressMessages(suppressWarnings({
+  for (pkg in required_packages) {
+    if (!require(pkg, character.only = TRUE)) {
+      install.packages(pkg)
+    }
+    library(pkg, character.only = TRUE)
+  }
+}))
+# use osf url, my github crashed? 
+horrorDataUrl <- "https://osf.io/download/mxs49/?direct&mode=render"
 ```
 
 ### Data Processing Level 1 
 ```{r}
-library(ggplot2)
-library(tidyr)
+# read in from url 
+HorrorIMDB <- read.csv(horrorDataUrl)
+
 # Filter out movies that are missing a value in budget, runtime, parentalrating, and rating column 
 cleanedMovies <- HorrorIMDB %>%
   filter(!is.na(Budget), !is.na(RunTime), !is.na(ParentalRating), !is.na(Rating))
@@ -34,7 +35,6 @@ cleanedMovies <- HorrorIMDB %>%
 # Separate the 'Genre' column into multiple genre categories
 # Assuming 'Genre' column contains strings like "Action| Fantasy| Horror| Mystery| Romance"
 # This separates each genre into its own column
-
 
 # Separate genre column into multiple categories 
 genreSorted <- cleanedMovies %>%
@@ -64,7 +64,7 @@ summaryStat <- function(myDat){
 summaryStat(HorrorIMDB$Rating)
 ```
 
-Descriptive stats pt 2, average rating by a movies main genre. Handle NaN's?  
+#Descriptive stats pt 2, average rating by a movies main genre. Handle NaN's?  
 ```{r}
 # Define the function to calculate the average rating by main genre
 genreAvg <- function(data) {
@@ -94,16 +94,9 @@ genreAvg(genreSorted) # only working function call with cleaned data
 ```
 
 ### Data Visualization Level 3 
-
 ```{r data wrangle first}
-#FIXME ADD HALLOWEEN COLORS 
 # Graph budget of movies  over time 
 # req packages 
-if (!require(ggplot2)) install.packages("ggplot2"); library(ggplot2)
-if (!require(dplyr)) install.packages("dplyr"); library(dplyr)
-if (!require(lubridate)) install.packages("lubridate"); library(lubridate)
-if (!require(scales)) install.packages("scales"); library(scales)
-if (!require(patchwork)) install.packages("patchwork"); library(patchwork)
 # clean up data first. Need to extract year for plotting
 HorrorIMDB <- HorrorIMDB %>%
   mutate(Release_Date = mdy(Release_Date),  # Convert to date
@@ -132,8 +125,7 @@ after cleaning we can finally plot
 ```{r}
 # first plot early data 
 early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
-  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 3.5) + # only one year, distribute points
-  geom_smooth(method = "lm", linewidth = 4, color = "#00CED1", fill = "#A2D2DF", na.rm = TRUE) +
+  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 2) + # only one year, distribute points
   scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
       title = "Movie Budgets in 1905",
@@ -146,18 +138,18 @@ early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
       panel.grid.major.y = element_line(color = "black"),
       axis.ticks.y = element_line(color = "black"),
       axis.ticks.x = element_line(color = "black"),
-      plot.title = element_text(face = "bold", size = 15, hjust = 1.2, color = "black"),
+      plot.title = element_text(face = "bold", size = 9, hjust = .95, color = "black"),
       plot.background = element_rect(fill = "orange"),
       axis.text.y = element_text(family = "serif",color = "black",face = "bold"),
       axis.text.x = element_text(color = "orange"),
       axis.line.x = element_line(color = "black"),
       axis.line.y = element_line(color = "black"),
-      text = element_text(family = "serif", color = "black",size = 16, face = "bold")
+      text = element_text(family = "serif", color = "black",size = 12, face = "bold")
       ) # close theme 
 
 later_plot <-ggplot(later_data, aes(x = Year, y = Budget_Million)) +
   geom_smooth(method = "glm", linewidth = 1.5, color = "#00CED1", fill = "orange", na.rm = TRUE, se = TRUE,span = 1, level = .98) +
-  geom_jitter(color = "white", alpha = 0.55, width = 0.47, size = 4) + 
+  geom_jitter(color = "white", alpha = 0.55, width = 0.47, size = 2) + 
   scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
     title = "Movie Budgets from 2012 to 2017",
@@ -167,15 +159,15 @@ later_plot <-ggplot(later_data, aes(x = Year, y = Budget_Million)) +
   theme(
    # text = element_text(family = "serif", color = "ghostwhite"),
      axis.text = element_text(color = "white"),
-    text = element_text(family = "serif", color = "black",size = 16, face = "bold"),
-    plot.title = element_text(face = "bold", size = 20, hjust = 0.5, color = "white"),
+    text = element_text(family = "serif", color = "black",size = 12, face = "bold"),
+    plot.title = element_text(face = "bold", size = 12, hjust = 0.5, color = "white"),
     axis.text.x = element_text(angle = 45, hjust = 0.5, color = "white"),
     axis.title.x = element_text(face = "bold", hjust = 0.5, color = "white"),
     panel.grid = element_line(color = "#8B0000", size = 0.1),
     plot.background = element_rect(fill = "black")
 ) 
 
-# splice together, add final aesthetics 
+# combine plots, add final aesthetics 
 comboPlot <- early_plot + later_plot + plot_layout(ncol = 2, widths = c(0.3, 2.5))
 comboPlot + 
   plot_annotation(
@@ -183,16 +175,80 @@ comboPlot +
     subtitle = "Comparing Budgets from 1905 to Modern Day; 2012-2017",
     theme = theme(
       text = element_text(family = "serif", color = "ghostwhite"),
-      plot.title = element_text(face = "bold", size = 23, color = 'maroon', hjust = 0.5),
+      plot.title = element_text(face = "bold", size = 18, color = 'maroon', hjust = 0.5),
       plot.subtitle = element_text(face = 'italic', size = 14, color = 'red', hjust = 0.5)))
 ```
 
 ### Inferential Statistics Level 4 
 ```{r}
 # Do movies with bigger budgets get better ratings?? 
+cleaned_data <- HorrorIMDB %>%
+  filter(!is.na(Budget), !is.na(Rating))
+
+ggplot(cleaned_data, aes(x = Budget, y = Rating)) +
+  geom_point(alpha = 0.5, color = "#401F71") +  # Scatter plot
+  geom_smooth(method = "lm", color = "red", se = TRUE) +  # Regression line
+  scale_x_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
+  labs(
+    title = "Relationship Between Movie Budget and Rating",
+    x = "$ Million of Budget",
+    y = "Rating"
+  ) +
+  theme_minimal()
+
+correlation <- cor(cleaned_data$Budget, cleaned_data$Rating, use = "complete.obs")
+print(paste("Correlation between Budget and Rating:", round(correlation, 2)))
+
+# Fit standard linear model
+model <- lm(Rating ~ Budget, data = cleaned_data)
+summary(model)
+
+### Do movies in the Horror genre get better ratings than mystery movies? 
+```
+
+```{r}
+# Load necessary libraries
 
 
-# Do movies in the Horror genre get better ratings than mystery movies? 
+# Step 1: Check available genres in `genreSorted`
+print("Available genres in dataset:")
+print(unique(genreSorted$Genres))
+
+# Step 2: Filter `genreSorted` for Horror and Mystery genres with non-missing ratings
+cleanGenreDat <- genreSorted %>%
+  filter(!is.na(Rating), Genres %in% c(" Horror", " Mystery")) # leading space?!? 
+
+# Check that we have both genres after filtering
+unique_genres <- unique(cleanGenreDat$Genres)
+print("Genres present in the filtered dataset:")
+print(unique_genres)
+
+if (length(unique_genres) < 2) {
+  stop("Error: Dataset must contain both 'Horror' and 'Mystery' genres for comparison.")
+}
+
+# Step 3: Visualize Ratings Comparison with a Boxplot
+ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
+  geom_boxplot(alpha = 0.7) +
+  labs(
+    title = "Comparison of Ratings: Horror vs Mystery Movies",
+    x = "Genre",
+    y = "Rating"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Horror" = "#401F71", "Mystery" = "#8B0000"))
+
+# Step 4: Calculate Mean Ratings for Each Genre
+genre_means <- cleanGenreDat %>%
+  group_by(Genres) %>%
+  summarise(Mean_Rating = mean(Rating, na.rm = TRUE))
+
+print("Mean Ratings for Each Genre:")
+print(genre_means)
+
+# Step 5: Normality Check and Statistical Test (as per the previous code)
+# Follow the same statistical test logic as in the previous response
+
 
 
 ```
