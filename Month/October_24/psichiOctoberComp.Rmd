@@ -1,60 +1,64 @@
 ---
-title: "psichiOctoberComp"
+title: "PsiChi R Coding Competition Submission--October"
 author: "Brady M. Chisholm"
-date: "2024-10-26"
-output: html_document
+date: "October, 2024"
+output: pdf_document
 ---
-### Load Data & packages 
-```{r setup}
-# suppress from knitted output? 
+
+## Load Data & packages
+
+### Assume user has nothing installed, support this in .rmd file
+
+```{r}
+
 # List required packages, install if needed
-required_packages <- c("tidyverse", "ggplot2", "tidyr", "dplyr", "lubridate", "scales", "patchwork")
+required_packages <- c("knitr","formatR","tidyverse", "ggplot2", "tidyr", "dplyr", 
+                       "lubridate", "scales", "patchwork")
 
 suppressMessages(suppressWarnings({
   for (pkg in required_packages) {
-    if (!require(pkg, character.only = TRUE)) {
-      install.packages(pkg)
-    }
-    library(pkg, character.only = TRUE)
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, repos = "https://cloud.r-project.org")
   }
-}))
+  library(pkg, character.only = TRUE)}  # end for 
+})) # end suppress 
+knitr::opts_chunk$set(comment = '', fig.width = 8, fig.height = 6, warning = FALSE, 
+                  tidy.opts = list(width.cutoff = 60))
 
-# use osf url, my github errors? 
-horrorDataUrl <- "https://osf.io/download/mxs49/?direct&mode=render"
+# use osf url. Tried to source from my github but repo errors 
+horrorDataSrc <- "https://osf.io/download/mxs49/?direct&mode=render"
 ```
 
-### Data Processing -- Level 1 
+## Data Processing -- Level 1 
+### Filter movies with missing values 
 ```{r level 1 pt 1}
-# read in from url 
-HorrorIMDB <- read.csv(horrorDataUrl)
+# read in data from src 
+HorrorIMDB <- read.csv(horrorDataSrc)
 
-# Filter out movies that are missing a value in budget, runtime, parentalrating, and rating column 
+# Filter missing value in budget, runtime, parentalrating, and rating column 
 cleanedMovies <- HorrorIMDB %>%
   filter(!is.na(Budget), !is.na(RunTime), !is.na(ParentalRating), !is.na(Rating))
 
 # Separate the 'Genre' column into multiple genre categories
-# Assuming 'Genre' column contains strings like "Action| Fantasy| Horror| Mystery| Romance"
-# This separates each genre into its own column
-
-# Separate genre column into multiple categories 
 genreSorted <- cleanedMovies %>%
   separate_rows(Genres, sep = "\\|") %>%
-  mutate(Genre = trimws(Genres)) # trim any white space  we created 
+  mutate(Genre = trimws(Genres)) # trim white space created 
 ```
 
-### Descriptive Statistics -- Level 2
+## Descriptive Statistics -- Level 2
+### Create summary statistic script 
 ```{r descriptive stats pt 1}
 # Avg, std, median, range of rating variable 
 summaryStat <- function(myDat){
-  
   avg <- mean(myDat, na.rm = TRUE)
   std <- sd(myDat, na.rm = TRUE)
   med <- median(myDat, na.rm = TRUE)
   rg <- range(myDat, na.rm = TRUE)
-  # organize results and make them print in a pretty way. Alt data frame? 
+  # organize results and make them print in a pretty way. Alt a data frame? 
   stats_df <- data.frame(
     Descriptive_Stat = c("Average", "Standard Deviation", "Median", "Range"),
-    Value = c(round(avg, 2), round(std, 2), round(med, 2), paste("(", rg[1], " to ", rg[2], ")", sep = ""))) # clean up values for printing 
+    Value = c(round(avg, 2), round(std, 2), round(med, 2), 
+              paste("(", rg[1], " to ", rg[2], ")", sep = ""))) # clean up for printing 
   
   print(stats_df, row.names = FALSE)
   
@@ -63,7 +67,7 @@ summaryStat <- function(myDat){
 
 summaryStat(HorrorIMDB$Rating)
 ```
-
+### Show average by genre
 ```{r descriptive stats pt 2}
 # Define the function to calculate the average rating by main genre
 genreAvg <- function(data) {
@@ -85,58 +89,62 @@ genreAvg <- function(data) {
   
   # return table but suppress 
   invisible(genre_avg_df)} # function end 
-
+```
+#### Test function 
+```{r}
 # test function 
 genreAvg(genreSorted) # function only works when called on sorted data 
 ```
 
-### Data Visualization -- Level 3 
+## Data Visualization -- Level 3 
+### Plot the budget for movies over time 
 ```{r data viz. data wrangle}
 # clean up data first. Need to extract year for plotting
 HorrorIMDB <- HorrorIMDB %>%
-  mutate(Release_Date = mdy(Release_Date),  # Convert to date
-         Year = year(Release_Date),         # Extract year 
-         Budget_Million = Budget / 1e6) #%>%  # Convert Budget to millions
+  mutate(Release_Date = mdy(Release_Date),  # switch to date
+         Year = year(Release_Date),         # get year 
+         Budget_Million = Budget / 1e6) #%>%  # convert budg to millions
 
-# bad code. Filter was removing all low values 
+# bad code. Filter was removing all low values, no data left to plot. Fixed  
 HorrorIMDB <- HorrorIMDB %>%
   filter(!is.na(Year))
 
-# divide data into early and late 
+# split data
 early_data <- HorrorIMDB %>% filter(Year <= 1905)
 later_data <- HorrorIMDB %>% filter(Year >= 1910)
 ```
 
-After cleaning we can finally plot
+### After cleaning, finally can plot
 ```{r data visualization}
 # Graph budget of movies  over time 
 # first plot early data 
 early_plot <- ggplot(early_data, aes(x= Year,y =  Budget_Million)) +
-  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 2) + # only one year, distribute points
+  geom_jitter(color = "black", alpha = 0.7, width = 0.25, size = 2) + # only one yr, distribute points
   scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
-      title = "Movie Budgets in 1905",
-       x = "1905", 
-       y = "Budget in Millions $") +
+    title = "Movie Budgets in 1905",
+    x = "Year - 1905   ", 
+    y = "Budget in Millions $") +
   theme_minimal() + 
-    theme(
-      panel.grid = element_line(color = "orange"),
-      panel.grid.major.x = element_line(color = "orange"),
-      panel.grid.major.y = element_line(color = "black"),
-      axis.ticks.y = element_line(color = "black"),
-      axis.ticks.x = element_line(color = "black"),
-      plot.title = element_text(face = "bold", size = 9, hjust = .95, color = "black"),
-      plot.background = element_rect(fill = "orange"),
-      axis.text.y = element_text(family = "serif",color = "black",face = "bold"),
-      #FIXME make x axis text disappear 
-      axis.text.x = element_blank(),
-      axis.line.x = element_line(color = "black"),
-      axis.line.y = element_line(color = "black"),
-      text = element_text(family = "serif", color = "black",size = 12, face = "bold")
-      ) # close theme 
+  theme(
+    text = element_text(family = "serif", color = "black",size = 12, hjust = .5, face = "bold"),
+    panel.grid = element_line(color = "orange"),
+    panel.grid.major.x = element_line(color = "orange"),
+    panel.grid.major.y = element_line(color = "black"),
+    axis.ticks.y = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    plot.title = element_text(face = "bold", size = 9, hjust = .95, color = "black"),
+    plot.background = element_rect(fill = "orange"),
+    axis.text.y = element_text(family = "serif",color = "black",face = "bold"),
+    #FIXME make x axis text disappear 
+    axis.text.x = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    axis.line.y = element_line(color = "black")
+  ) # close theme 
 
 later_plot <-ggplot(later_data, aes(x = Year, y = Budget_Million)) +
-  geom_smooth(method = "glm", linewidth = 1.5, color = "#00CED1", fill = "orange", na.rm = TRUE, se = TRUE,span = 1, level = .98) +
+  geom_smooth(method = "glm", linewidth = 1.5, color = "#00CED1", fill = "orange", 
+              na.rm = TRUE, se = TRUE,span = 1, level = .98) +
   geom_jitter(color = "white", alpha = 0.55, width = 0.47, size = 2) + 
   scale_y_continuous(labels = scales::dollar_format(prefix = "$", suffix = "M")) +
   labs(
@@ -165,8 +173,9 @@ comboPlot +
       plot.subtitle = element_text(face = 'italic', size = 14, color = 'red', hjust = 0.5)))
 ```
 
-### Inferential Statistics -- Level 4 
-```{r}
+## Inferential Statistics -- Level 4 
+### Do horror movies get better ratings than mystery movies? 
+```{r inferential pt 1}
 # Do movies with bigger budgets get better ratings?? 
 cleaned_data <- HorrorIMDB %>%
   filter(!is.na(Budget), !is.na(Rating))
@@ -178,8 +187,7 @@ ggplot(cleaned_data, aes(x = Budget, y = Rating)) +
   labs(
     title = "Movie Budget and Rating: Halloween Edition",
     x = "Budget ($ Million)",
-    y = "IMDB Rating"
-  ) +
+    y = "IMDB Rating") +
   theme_minimal() +
   theme(
     plot.title = element_text(size = 16, face = "bold", color = "orange"),
@@ -189,17 +197,34 @@ ggplot(cleaned_data, aes(x = Budget, y = Rating)) +
     plot.background = element_rect(fill = "#222222", color = NA),   # Dark plot background
     plot.margin = margin(15, 15, 15, 15)  # Adds space around plot for readability
   )
-
+# find our correlation statistic  
 correlation <- cor(cleaned_data$Budget, cleaned_data$Rating, use = "complete.obs")
-print(paste("Correlation between Budget and Rating:", round(correlation, 2)))
+print(paste("Correlation between budget & rating is", round(correlation, 2)))
 
-# Linear model
+# simple linear model
 model <- lm(Rating ~ Budget, data = cleaned_data)
 summary(model)
 ```
 
-```{r}
-### Do movies in the Horror genre get better ratings than mystery movies? 
+The correlation between budget and rating is **0.13**. This indicates a **weak positive correlation** between budget and IMDB rating. Results suggest that higher budget may be weakly associated with better ratings, but the effect is not strong. 
+
+A linear regression model was fitted to explore the effect of budget on IMDB ratings. The model summary is:
+
+- **Intercept**: 4.97
+- **Budget Coefficient**: 2.13e-08
+- **t-value**: 3.72
+- **p-value**: 0.000217 (**p < 0.001**)
+
+The regression equation used is:
+
+\[
+\text{Rating} = 4.97 + (2.13 \times 10^{-8}) \times \text{Budget}
+\]
+
+The p-value of 0.000217 tells us a statistically significant relationship between budget and ratings exists. However, the **R-squared value** is **0.016**. A low R-squared value such as this says budget explains only about 1.6% of the variance in movie ratings. This tells us that there are possibly many other factors influencing movie success as measured by ratings.
+
+### Do horror movies get better ratings than mystery? 
+```{r inferential pt 2}
 print("Genres in dataset:")
 print(unique(genreSorted$Genres))
 
@@ -223,10 +248,11 @@ ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
     outlier.size = 3, 
     color = "orange",  
     size = 1.0
-                 ) +
+  ) +
   scale_fill_manual(values = c(" Horror" = "#FF7518", " Mystery" = "#6A0DAD")) +  # Halloween colors
   labs(
-    title = "Spooky Ratings: Horror vs Mystery Movies",
+    title = "Horror vs Mystery Movies",
+    subtitle = "Spooky Edition",
     x = "Genre",
     y = "IMDB Rating"
   ) +
@@ -235,13 +261,13 @@ ggplot(cleanGenreDat, aes(x = Genres, y = Rating, fill = Genres)) +
     plot.title = element_text(size = 18, face = "bold", color = "orange",hjust = 0.5),
     axis.title = element_text(size = 14, color = "white"),
     axis.text = element_text(size = 12, color = "orange"),
+    plot.subtitle = element_text(size = 13, face = "italic", color = "orange",hjust = 0.5),
     legend.position = "none",
     plot.background = element_rect(fill = "#222222", color = NA),  # Dark background
     panel.background = element_rect(fill = "#222222"),
-    text = element_text(family = "serif")  
-      )
+    text = element_text(family = "serif"))  # end theme 
 
-# calculate mean in genre
+# calculate mean stat
 genre_means <- cleanGenreDat %>%
   group_by(Genres) %>%
   summarise(Mean_Rating = mean(Rating, na.rm = TRUE))
@@ -249,8 +275,12 @@ genre_means <- cleanGenreDat %>%
 print("Mean Ratings for Each Genre:")
 print(genre_means)
 ```
+The average rating for each genre is:
+- **Horror**: 6.3
+- **Mystery**: 7.1
 
-           /\_/\      
-          ( o.o )     
-           > ^ <      
-           
+Analysis suggests that **Mystery movies tend to receive higher ratings on average** than **horror** movies, and this difference is statistically significant.
+
+```{r,include = FALSE,echo = TRUE}
+invisible(cat(" /\\_/\\\n( o.o )\n > ^ <\n"))
+```
