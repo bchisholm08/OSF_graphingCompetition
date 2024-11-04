@@ -1,4 +1,4 @@
-### Repo of code I created as part of the monthly R Competition hosted by Psi Chi on OSF! 
+### Repo of my code from the monthly R Coding Competition hosted by Psi Chi on the Open Science Framework 
 
-<h4 align = "left"><b><u>OSF homepage for the competition is linked </u></b> <a
+<h4 align = "left"><b><u>The homepage for the competition is linked </u></b> <a
 href = "https://osf.io/f5zjr/"> here!</a>
