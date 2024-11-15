@@ -1,0 +1,11 @@
+---
+title: "november_psichi_code"
+author: "Brady M. Chisholm"
+date: "2024-11-15"
+output: html_document
+---
+
+```{r}
+
+```
+
