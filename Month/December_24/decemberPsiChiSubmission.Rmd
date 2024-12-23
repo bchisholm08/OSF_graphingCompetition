@@ -1,0 +1,156 @@
+---
+title: "December Psi Chi R Submission"
+output: html_document
+author: Brady M. Chisholm
+---
+### Prep & Setup
+```{r setup, echo=TRUE, message=FALSE, warning=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+# cache
+install.packages("knitr", quiet = TRUE)
+library(knitr)
+required_packages <- c("ggplot2","tidyr","readr","moments","psych","gt") 
+# code into a function 
+for (pkg in required_packages) {
+  if (!require(pkg, character.only = TRUE)) { 
+    install.packages(pkg)               
+    library(pkg, character.only = TRUE)} 
+  else {
+    library(pkg, character.only = TRUE)}}
+```
+Load data 
+```{r data loading, echo=TRUE, message=FALSE, warning=FALSE}
+# Load CSV file
+dataSource <- "https://raw.githubusercontent.com/bchisholm08/OSF_graphingCompetition/main/Month/shopping_trends_updated.csv"
+data <- read_csv(dataSource)
+
+# preview data / var types
+head(data)
+```
+
+### Level 1 
+```{r lvl 1 filtering}
+# filter NA's in age
+naRMData <- subset(data, !is.na(Age))
+
+# Check filtered data struct 
+head(naRMData)
+```
+
+```{r}
+ggplot(naRMData, aes(x = `Review Rating`)) +
+  geom_histogram(binwidth = 0.2, fill = "#dcfbe7", color = "black") +  
+  labs(
+    title = "Distribution of Review Rating Variable",
+    x = "Review Rating",
+    y = "Frequency"
+  ) +
+  theme_minimal(base_size = 15) + 
+  theme(
+    panel.background = element_rect(fill = "black", colour = "black"),  
+    plot.background = element_rect(fill = "black", colour = "black"),   
+    panel.grid.major = element_line(colour = "#fbe7dc"),                
+    panel.grid.minor = element_line(colour = "#fbe7dc"),                
+    axis.text = element_text(colour = "#dcfbe7"),                       
+    axis.title = element_text(colour = "#e7dcfb", size = 14),           
+    plot.title = element_text(colour = "#fbe7dc", size = 20, hjust = 0.5),  
+    plot.margin = margin(10, 10, 10, 10))
+```
+
+Distribution of rating. Skew val 
+```{r lvl 1 skew}
+# Calculate skew
+skewness_value <- moments::skewness(naRMData$`Review Rating`)
+paste("Review Rating Skew =", round(skewness_value, 4))
+```
+>**Review rating data is normally distributed, and does not skew to the left or right**  
+>**Skew value is low, only 0.0058**
+
+### Level 2 
+min, med, avg, sd of review rating
+```{r summary stats}
+descriptiveStats <- data.frame(
+  Metric = c("Minimum", "Median", "Maximum", "Average", "Standard Deviation"),
+  Value = c(
+    min(naRMData$`Review Rating`, na.rm = TRUE),
+    median(naRMData$`Review Rating`, na.rm = TRUE),
+    max(naRMData$`Review Rating`, na.rm = TRUE),
+    mean(naRMData$`Review Rating`, na.rm = TRUE),
+    sd(naRMData$`Review Rating`, na.rm = TRUE)))
+
+descriptiveStats %>%
+  gt() %>%
+  tab_header(
+    title = "Descriptive Statistics for Review Rating"
+  ) %>%
+  fmt_number(
+    columns = "Value",
+    decimals = 3
+  ) %>%
+  cols_label(
+    Metric = md("**Statistic**"),
+    Value = md("**Value**"))
+```
+
+### Level 3 
+table of avg rating by category
+```{r lvl 3 tbl}
+# pull table vals 
+catAvg <- naRMData %>%
+  dplyr::group_by(Category) %>%
+  dplyr::summarise(Average_Review_Rating = mean(`Review Rating`, na.rm = TRUE)) %>%
+  dplyr::arrange(desc(Average_Review_Rating))
+
+# explore gt package...never tried it
+catAvg %>%
+  gt() %>%
+  tab_header(
+    title = "Average Review Rating by Category"
+  ) %>%
+  fmt_number(
+    columns = "Average_Review_Rating",
+    decimals = 2
+  ) %>%
+  cols_label(
+    Average_Review_Rating = md("**Average Rating**") ,
+    Category = md("**Category**")
+  )
+```
+
+### Level 4
+Data visualization 
+```{r lvl 4 viz, warning=FALSE}
+ggplot(naRMData, aes(x = `Review Rating`, y = `Purchase Amount (USD)`)) +
+  geom_point(width = 0.2, alpha = 0.7, colour = "#B9C0DA") +  
+  geom_jitter(width = 0.2, alpha = 0.7, colour = "#B9C0DA") +  
+  geom_smooth(method = "loess", colour = "#F8333C", se = TRUE, size = 1.7) +
+  labs(
+    title = "Relationship of Purchase Amount & Review Rating",
+    x = "Review Rating",
+    y = "Purchase Amount (USD)"
+  ) +
+  theme_minimal(base_size = 15) +  
+  theme(
+    panel.background = element_rect(fill = "black", colour = "black"),  
+    plot.background = element_rect(fill = "black", colour = "black"),   
+    panel.grid.major = element_line(colour = "white"),                
+    panel.grid.minor = element_line(colour = "white"),                
+    axis.text = element_text(colour = "#FFC53A"),                       
+    axis.title = element_text(colour = "#FFC53A"),                      
+    plot.title = element_text(colour = "#51E5FF", hjust = 0.5, size = 19))
+
+# corr of vars 
+cor_test <- cor.test(naRMData$`Purchase Amount (USD)`, naRMData$`Review Rating`, use = "complete.obs")
+```
+#### Correlation Results
+
+>**Correlation Coefficient (r):** `r round(cor_test$estimate, 3)`
+
+>**P-Value of Correlation:** `r round(cor_test$p.value, 3)`
+
+---
+
+---
+
+---

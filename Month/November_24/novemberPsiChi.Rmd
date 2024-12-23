@@ -1,0 +1,84 @@
+---
+title: "psichiNovemberComp"
+author: "Brady M. Chisholm"
+date: "2024-10-26"
+output: html_document
+---
+
+# package installation 
+```{r}
+required_packages <- c("ggplot2", "dplyr","tidyr") 
+
+for (pkg in required_packages) {
+  if (!require(pkg, character.only = TRUE)) { 
+    install.packages(pkg)               
+    library(pkg, character.only = TRUE)
+    } 
+  else {
+    library(pkg, character.only = TRUE)}}
+```
+
+### LEVEL ONE
+```{r}
+# load in data
+stressDat <- read.csv("Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/November_24/NovemberRdata.csv")
+# extract some stats to plot  
+mean_sleep <- mean(stressDat$`Quality of Sleep`, na.rm = TRUE)
+sd_sleep <- sd(stressDat$`Quality of Sleep`, na.rm = TRUE)
+```
+
+```{r}
+# knowing count helps w/ labels 
+max_count <- max(ggplot_build(
+  ggplot(stressDat, aes(`Quality of Sleep`)) + geom_histogram(binwidth = 0.5)
+)$data[[1]]$count)
+
+ggplot(stressDat, aes(`Quality of Sleep`)) + 
+  geom_histogram(binwidth = 0.5, fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_vline(aes(xintercept = mean_sleep), color = "black", linetype = "solid", linewidth = 0.75) + # Mean
+  geom_vline(aes(xintercept = mean_sleep + sd_sleep), color = "purple", linetype = "dashed", linewidth = 0.75) + # +1 SD
+  geom_vline(aes(xintercept = mean_sleep - sd_sleep), color = "purple", linetype = "dashed", linewidth = 0.75) + # -1 SD
+  annotate("text", x = mean_sleep, y = max_count * 1.05, label = "Mean", color = "black", fontface = "bold", hjust = -0.1) + #annotate() takes hjust 
+  annotate("text", x = mean_sleep + sd_sleep, y = max_count * 1.05, label = "+1 SD", color = "purple", fontface = "bold", hjust = -0.1) +
+  annotate("text", x = mean_sleep - sd_sleep, y = max_count * 1.05, label = "-1 SD", color = "purple", fontface = "bold", hjust = 1.1) +
+  labs(title = "Quality of Sleep",
+       subtitle = "Subjective Rating, 1-10",
+       x = "Quality of Sleep",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+```{r}
+ggplot(stressDat, aes(`Quality of Sleep`)) + 
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.shape = 16, outlier.size = 3, linewidth = 1) +
+  labs(title = "Quality of Sleep Boxplot",
+       subtitle = "Subjective Ratings from 1-10",
+       x = "Quality of Sleep",
+       y = "Values") +
+  # theme_minimal(base_size = 15) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5, color = "navy"),
+    plot.subtitle = element_text(hjust = 0.5, color = "grey20"),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey80", linetype = "dashed")
+  ) +
+  scale_color_viridis_c(option = "C")
+```
+
+```{r}
+
+```
+
+
+
+### LEVEL TWO
+
+
+### LEVEL THREE
+
+
+### LEVEL FOUR 
+
+
+

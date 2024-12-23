@@ -10,7 +10,6 @@ Load Data & packages
 #FIXME load data non-locally 
 HorrorIMDB <- read.csv("~/Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/October_24/HorrorIMDb.csv")
 
-
 # Check for required packages and install if needed 
 #FIXME update packages before completing code 
 required_packages <- c("ggplot2", "dplyr","tidyr") 
@@ -33,7 +32,6 @@ cleanedMovies <- HorrorIMDB %>%
 # Separate the 'Genre' column into multiple genre categories
 # Assuming 'Genre' column contains strings like "Action| Fantasy| Horror| Mystery| Romance"
 # This separates each genre into its own column
-
 
 # Separate genre column into multiple categories 
 genreSorted <- cleanedMovies %>%
