@@ -1,0 +1,43 @@
+---
+author: Brady M. Chisholm
+title: "march_osf"
+output: html_document
+---
+# add auto-load library code from previous months 
+```{r}
+library(dplyr)
+```
+
+```{r}
+dataOG <- read_csv("Documents/Academics/UMN/Code/osf_graphingCompetitions/Month/March_25/PsiChiR_pilot.csv")
+head(dataOG)
+```
+
+# Level One
+```{r}
+gpaSorted <- dataOG[order(dataOG$GPA, decreasing = TRUE)]
+head(gpaSorted$GPA)
+```
+
+# Level Two
+
+# Level 2: Produce the means and standard deviations for the following variables:
+# GPA
+# Male_score (recognition for male psychologists like Sigmund Freud; higher scores = more recognition)
+# Female_score (recognition for psychologist women)
+# POC_score (recognition for psychologists of color)
+# White_score (recognition for white psychologists)
+```{r}
+
+```
+
+# Level Three
+```{r}
+
+```
+
+# Level Four
+```{r}
+
+```
+

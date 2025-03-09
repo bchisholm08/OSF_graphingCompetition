@@ -1,5 +1,95 @@
 ---
 title: "januaryR-Code"
 output: html_document
+author: "Brady M. Chisholm"
 ---
+### Prep & Setup
+```{r setup, echo=TRUE, message=FALSE, warning=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+# install.packages("knitr", quiet = TRUE)
+library(knitr)
+library(dplyr)
+required_packages <- c("ggplot2","tidyr","readr","moments","psych","gt","dplyr") 
+for (pkg in required_packages) {
+  if (!require(pkg, character.only = TRUE)) { 
+    install.packages(pkg)               
+    library(pkg, character.only = TRUE)} 
+  else {
+    library(pkg, character.only = TRUE)}}
+```
+Load data 
+```{r data loading, echo=TRUE, message=FALSE, warning=FALSE}
+# Load CSV file
+datLink <- "https://raw.githubusercontent.com/bchisholm08/OSF_graphingCompetition/refs/heads/main/Month/January_25/datasets/world_cheese_awards_2021.csv"
+
+cheeseData <- read_csv(datLink)
+# preview data / var types
+head(cheeseData)
+colnames(cheeseData)
+```
+
+### Level 1 
+remove any rows missing a value for company, product name, and/or rating
+
+check if we have NaN or NA vals 
+```{r}
+naRMData <- cheeseData %>%
+  filter(if_all(c("company", "product_name", "rating"), ~ !is.na(.)))
+
+cat("Original Dimensions: ", dim(cheeseData), "\n")
+cat("Filtered Dimensions: ", dim(naRMData), "\n")
+
+# make sure we have no NaNs left
+sapply(naRMData[c("company", "product_name", "rating")], function(x) sum(is.na(x)))
+
+```
+
+```{r check vals}
+dim(naRMData)
+dim(cheeseData)
+```
+
+### Level 2 
+Make a table to show the count of each category within rating, and then make another table showing counts for each country 
+```{r}
+catINRating %>%
+  gt() %>%
+  tab_header(
+    title = "Count of Categories by Rating"
+  ) %>%
+  fmt_number(
+    columns = 
+    decimals = 2
+  ) %>% 
+  cols_label(
+    
+  )
+  
+```
+
+descriptiveStats %>%
+  gt() %>%
+  tab_header(
+    title = "Descriptive Statistics for Review Rating"
+  ) %>%
+  fmt_number(
+    columns = "Value",
+    decimals = 3
+  ) %>%
+  cols_label(
+    Metric = md("**Statistic**"),
+    Value = md("**Value**"))
+
+
+### Level 3 
+Make a table showing how many of each (rating) each (Category_Corrected). Which cheese has the most “Super Golds?” Next, modify the table and indicate which country produced the most “Super Gold” cheeses
+```{r}
+
+```
+
+### Level 4 
+Generate a map that shows which countries have won super gold medals
+```{r}
+
+```
 
